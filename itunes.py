@@ -1,15 +1,32 @@
 from lxml import html
 import requests
+import time #time library imported
 
 class AppCrawler:
 
     def __init__(self, starting_url, depth):
         self.starting_url = starting_url
         self.depth = depth
+        self.current_depth = 0
+        self.depth_links = []
         self.apps = []
 
     def crawl(self):
-        self.get_app_from_link(self.starting_url)
+        app = self.get_app_from_link(self.starting_url)
+        self.apps.append(app)
+        self.depth_links.append(app.links)
+
+        while self.current_depth < self.depth:
+            current_links = []
+            for link in self.depth_links[self.current_depth]:
+                current_app = self.get_app_from_link(link)
+                current_links.extend(current_app.links)
+                self.apps.append(current_app)
+                time.sleep(5) #sleeps between iterations to prevent IP banning
+
+            self.current_depth += 1
+            self.depth_links.append(current_links)
+
         return
 
     def get_app_from_link(self, link):
@@ -24,7 +41,7 @@ class AppCrawler:
         # for link in links:
         #     print link
         app = App(name, developer, price, links)
-        self.apps.append(app)
+        return app
 
 class App:
     def __init__(self, name, developer, price, links):
@@ -39,7 +56,7 @@ class App:
         "\r\nDeveloper: " + self.developer.encode('UTF-8') +
         "\r\nPrice: " + self.price.encode('UTF-8') + "\r\n")
 
-crawler = AppCrawler('https://itunes.apple.com/us/app/candy-crush-saga/id553834731?mt=8&utm_medium=referral&utm_source=pulsenews', 0)
+crawler = AppCrawler('https://itunes.apple.com/us/app/candy-crush-saga/id553834731?mt=8&utm_medium=referral&utm_source=pulsenews', 2)
 crawler.crawl()
 
 for app in crawler.apps:
